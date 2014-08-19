@@ -33,6 +33,7 @@ import android.widget.ListView;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -88,6 +89,7 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
 
     // Transient properties
     private List<PendingDismissData> mPendingDismisses = new ArrayList<PendingDismissData>();
+    private List<View> mAnimatedViews = new LinkedList<View>();
     private int mDismissAnimationRefCount = 0;
     private float mDownX;
     private float mDownY;
@@ -98,6 +100,7 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
     private View mDownView;
     private boolean mPaused;
 
+    private final Object mAnimationLock = new Object();
     /**
      * The callback interface used by {@link SwipeDismissRecyclerViewTouchListener} to inform its client
      * about a successful dismissal of one or more list item positions.
@@ -262,7 +265,13 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
                     // dismiss
                     final View downView = mDownView; // mDownView gets null'd before animation ends
                     final int downPosition = mDownPosition;
-                    ++mDismissAnimationRefCount;
+                    synchronized (mAnimationLock) {
+                        if (mAnimatedViews.contains(downView)) {
+                            break;
+                        }
+                        ++mDismissAnimationRefCount;
+                        mAnimatedViews.add(downView);
+                    }
                     mDownView.animate()
                             .translationX(dismissRight ? mViewWidth : -mViewWidth)
                             .alpha(0)
@@ -354,8 +363,13 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
         animator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
-                --mDismissAnimationRefCount;
-                if (mDismissAnimationRefCount == 0) {
+                boolean noAnimationLeft;
+                synchronized (mAnimationLock) {
+                    --mDismissAnimationRefCount;
+                    mAnimatedViews.remove(dismissView);
+                    noAnimationLeft = mDismissAnimationRefCount == 0;
+                }
+                if (noAnimationLeft) {
                     // No active animations, process all pending dismisses.
                     // Sort by descending position
                     Collections.sort(mPendingDismisses);
