@@ -17,9 +17,11 @@
 package com.example.android.swipedismiss;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -102,6 +104,13 @@ public class MainActivity extends Activity {
         // Setting this scroll listener is required to ensure that during ListView scrolling,
         // we don't look for swipes.
         mRecyclerView.setOnScrollListener(touchListener.makeScrollListener());
+        mRecyclerView.addOnItemTouchListener(new RecyclerItemClickListener(this,
+                new OnItemClickListener() {
+                    @Override
+                    public void onItemClick(View view, int position) {
+                        Toast.makeText(MainActivity.this, "Clicked " + mItems.get(position), Toast.LENGTH_SHORT).show();
+                    }
+                }));
     }
 
     private class CustomViewHolder extends RecyclerView.ViewHolder {
@@ -112,6 +121,39 @@ public class MainActivity extends Activity {
             super(itemView);
 
             mTextView = (TextView) itemView.findViewById(android.R.id.text1);
+        }
+    }
+
+    public interface OnItemClickListener {
+        public void onItemClick(View view, int position);
+    }
+
+    public class RecyclerItemClickListener implements RecyclerView.OnItemTouchListener {
+        private OnItemClickListener mListener;
+
+        GestureDetector mGestureDetector;
+
+        public RecyclerItemClickListener(Context context, OnItemClickListener listener) {
+            mListener = listener;
+            mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+                @Override
+                public boolean onSingleTapUp(MotionEvent e) {
+                    return true;
+                }
+            });
+        }
+
+        @Override
+        public boolean onInterceptTouchEvent(RecyclerView view, MotionEvent e) {
+            View childView = view.findChildViewUnder(e.getX(), e.getY());
+            if (childView != null && mListener != null && mGestureDetector.onTouchEvent(e)) {
+                mListener.onItemClick(childView, view.getChildPosition(childView));
+            }
+            return false;
+        }
+
+        @Override
+        public void onTouchEvent(RecyclerView view, MotionEvent motionEvent) {
         }
     }
 }
