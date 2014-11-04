@@ -1,4 +1,4 @@
-Android Swipe-to-Dismiss Sample Code
+Android Swipe-to-Dismiss RecyclerView Sample Code
 ====================================
 
 Sample code that shows how to make `RecyclerView` support the swipe-to-dismiss Android UI pattern.
