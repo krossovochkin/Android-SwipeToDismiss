@@ -19,8 +19,10 @@ package com.example.android.swipedismiss;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -50,7 +52,7 @@ public class MainActivity extends Activity {
     }
 
     private void initData() {
-        mItems = new ArrayList<String>();
+        mItems = new ArrayList<>();
         for (int i = 0; i < ITEMS_COUNT; i++) {
             mItems.add("Item " + (i + 1));
         }
@@ -59,6 +61,8 @@ public class MainActivity extends Activity {
     private void initRecyclerView() {
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerView);
         mLayoutManager = new LinearLayoutManager(this);
+//        mLayoutManager = new GridLayoutManager(this, 2);
+//        mLayoutManager = new StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(mLayoutManager);
 
         mAdapter = new RecyclerView.Adapter<CustomViewHolder>() {
@@ -71,6 +75,9 @@ public class MainActivity extends Activity {
 
             @Override
             public void onBindViewHolder(CustomViewHolder viewHolder, int i) {
+                // TODO: this is temp solution for preventing blinking item onDismiss, you should setVisibility for root view of item
+                viewHolder.mTextView.setVisibility(View.VISIBLE);
+
                 viewHolder.mTextView.setText(mItems.get(i));
             }
 
@@ -93,11 +100,13 @@ public class MainActivity extends Activity {
                             @Override
                             public void onDismiss(RecyclerView recyclerView, int[] reverseSortedPositions) {
                                 for (int position : reverseSortedPositions) {
-//                                    mLayoutManager.removeView(mLayoutManager.getChildAt(position));
+
+                                    // TODO: this is temp solution for preventing blinking item onDismiss
+                                    mLayoutManager.findViewByPosition(position).setVisibility(View.GONE);
+
                                     mItems.remove(position);
                                     mAdapter.notifyItemRemoved(position);
                                 }
-                                mAdapter.notifyDataSetChanged();
                             }
                         });
         mRecyclerView.setOnTouchListener(touchListener);
