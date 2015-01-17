@@ -75,9 +75,6 @@ public class MainActivity extends Activity {
 
             @Override
             public void onBindViewHolder(CustomViewHolder viewHolder, int i) {
-                // TODO: this is temp solution for preventing blinking item onDismiss, you should setVisibility for root view of item
-                viewHolder.mTextView.setVisibility(View.VISIBLE);
-
                 viewHolder.mTextView.setText(mItems.get(i));
             }
 
@@ -100,13 +97,10 @@ public class MainActivity extends Activity {
                             @Override
                             public void onDismiss(RecyclerView recyclerView, int[] reverseSortedPositions) {
                                 for (int position : reverseSortedPositions) {
-
-                                    // TODO: this is temp solution for preventing blinking item onDismiss
-                                    mLayoutManager.findViewByPosition(position).setVisibility(View.GONE);
-
                                     mItems.remove(position);
-                                    mAdapter.notifyItemRemoved(position);
                                 }
+                                // do not call notifyItemRemoved for every item, it will cause gaps on deleting items
+                                mAdapter.notifyDataSetChanged();
                             }
                         });
         mRecyclerView.setOnTouchListener(touchListener);
