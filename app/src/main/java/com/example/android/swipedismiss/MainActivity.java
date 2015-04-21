@@ -65,10 +65,14 @@ public class MainActivity extends Activity {
 //        mLayoutManager = new StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(mLayoutManager);
 
+        /**
+         * Regular Adapter
+         * Nothing to see here
+         */
         mAdapter = new RecyclerView.Adapter<CustomViewHolder>() {
             @Override
             public CustomViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-                View view = LayoutInflater.from(viewGroup.getContext()).inflate(android.R.layout.simple_list_item_1
+                View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.list_item
                         , viewGroup, false);
                 return new CustomViewHolder(view);
             }
@@ -116,6 +120,10 @@ public class MainActivity extends Activity {
                 }));
     }
 
+    /**
+     * Regular ViewHolder
+     * Nothing to see here
+     */
     private class CustomViewHolder extends RecyclerView.ViewHolder {
 
         private TextView mTextView;
@@ -123,7 +131,7 @@ public class MainActivity extends Activity {
         public CustomViewHolder(View itemView) {
             super(itemView);
 
-            mTextView = (TextView) itemView.findViewById(android.R.id.text1);
+            mTextView = (TextView) itemView.findViewById(R.id.text_view);
         }
     }
 
