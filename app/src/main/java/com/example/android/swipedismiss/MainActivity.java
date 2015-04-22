@@ -19,10 +19,8 @@ package com.example.android.swipedismiss;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -89,9 +87,13 @@ public class MainActivity extends Activity {
         };
         mRecyclerView.setAdapter(mAdapter);
 
+        // Init & set the touch listener
         SwipeDismissRecyclerViewTouchListener touchListener =
                 new SwipeDismissRecyclerViewTouchListener(
                         mRecyclerView,
+                        /**
+                         * Dismiss callback : Handles deletion of item
+                         */
                         new SwipeDismissRecyclerViewTouchListener.DismissCallbacks() {
                             @Override
                             public boolean canDismiss(int position) {
@@ -108,6 +110,7 @@ public class MainActivity extends Activity {
                             }
                         });
         mRecyclerView.setOnTouchListener(touchListener);
+
         // Setting this scroll listener is required to ensure that during ListView scrolling,
         // we don't look for swipes.
         mRecyclerView.setOnScrollListener(touchListener.makeScrollListener());

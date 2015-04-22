@@ -21,6 +21,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.graphics.Rect;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -87,7 +88,7 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
     private int mViewWidth = 1; // 1 and not 0 to prevent dividing by zero
 
     // Transient properties
-    private List<PendingDismissData> mPendingDismisses = new ArrayList<PendingDismissData>();
+    private List<PendingDismissData> mPendingDismisses = new ArrayList<>();
     private int mDismissAnimationRefCount = 0;
     private float mDownX;
     private float mDownY;
@@ -183,13 +184,14 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
                 // TODO: ensure this is a finger, and set a flag
 
                 // Find the child view that was touched (perform a hit test)
+                // cf : http://stackoverflow.com/questions/13296162/what-is-the-definition-of-the-value-supplied-by-the-android-function-view-gethit
                 Rect rect = new Rect();
-                int childCount = mRecyclerView.getChildCount();
                 int[] listViewCoords = new int[2];
                 mRecyclerView.getLocationOnScreen(listViewCoords);
                 int x = (int) motionEvent.getRawX() - listViewCoords[0];
                 int y = (int) motionEvent.getRawY() - listViewCoords[1];
                 View child;
+                int childCount = mRecyclerView.getChildCount();
                 for (int i = 0; i < childCount; i++) {
                     child = mRecyclerView.getChildAt(i);
                     child.getHitRect(rect);
@@ -204,6 +206,9 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
                     mDownY = motionEvent.getRawY();
                     mDownPosition = mRecyclerView.getChildPosition(mDownView);
                     if (mCallbacks.canDismiss(mDownPosition)) {
+                        // Helper for tracking the velocity of touch events, for implementing
+                        // flinging and other such gestures
+                        // cf : Doc VelocityTracker
                         mVelocityTracker = VelocityTracker.obtain();
                         mVelocityTracker.addMovement(motionEvent);
                     } else {
@@ -213,13 +218,20 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
                 return false;
             }
 
+            // When is ACTION_CANCEL called ?
+            // -----------------------------
+            // The current gesture has been aborted. You will not receive any more points in it.
+            // You should treat this as an up event, but not perform any action that you normally
+            // would.
+            //
+            // cf : http://stackoverflow.com/questions/11960861/what-causes-a-motionevent-action-cancel-in-android
             case MotionEvent.ACTION_CANCEL: {
                 if (mVelocityTracker == null) {
                     break;
                 }
 
                 if (mDownView != null && mSwiping) {
-                    // cancel
+                    // Animate view back in initial position
                     mDownView.animate()
                             .translationX(0)
                             .alpha(1)
@@ -244,7 +256,7 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
                 float deltaX = motionEvent.getRawX() - mDownX;
                 mVelocityTracker.addMovement(motionEvent);
                 mVelocityTracker.computeCurrentVelocity(1000);
-                float velocityX = mVelocityTracker.getXVelocity();
+                float velocityX = mVelocityTracker.getXVelocity(); // Used later
                 float absVelocityX = Math.abs(velocityX);
                 float absVelocityY = Math.abs(mVelocityTracker.getYVelocity());
                 boolean dismiss = false;
@@ -314,9 +326,13 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
                 }
 
                 if (mSwiping) {
+                    // Animate the view to follow finger and fade out
                     mDownView.setTranslationX(deltaX - mSwipingSlop);
-                    mDownView.setAlpha(Math.max(0f, Math.min(1f,
-                            1f - 2f * Math.abs(deltaX) / mViewWidth)));
+                    mDownView.setAlpha(Math.max(
+                            0f,
+                            Math.min(1f,1f - 1f * Math.abs(deltaX) / mViewWidth)
+                            )
+                    );
                     return true;
                 }
                 break;
@@ -335,7 +351,7 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
         }
 
         @Override
-        public int compareTo(PendingDismissData other) {
+        public int compareTo(@NonNull PendingDismissData other) {
             // Sort by descending position
             return other.position - position;
         }
