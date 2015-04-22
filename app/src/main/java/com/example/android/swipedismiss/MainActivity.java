@@ -101,12 +101,9 @@ public class MainActivity extends Activity {
                             }
 
                             @Override
-                            public void onDismiss(RecyclerView recyclerView, int[] reverseSortedPositions) {
-                                for (int position : reverseSortedPositions) {
-                                    mItems.remove(position);
-                                }
-                                // do not call notifyItemRemoved for every item, it will cause gaps on deleting items
-                                mAdapter.notifyDataSetChanged();
+                            public void onDismiss(RecyclerView recyclerView, int position) {
+                                mItems.remove(position);
+                                mAdapter.notifyItemRemoved(position);
                             }
                         });
         mRecyclerView.setOnTouchListener(touchListener);
