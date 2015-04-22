@@ -19,10 +19,8 @@ package com.example.android.swipedismiss;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -65,10 +63,14 @@ public class MainActivity extends Activity {
 //        mLayoutManager = new StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(mLayoutManager);
 
+        /**
+         * Regular Adapter
+         * Nothing to see here
+         */
         mAdapter = new RecyclerView.Adapter<CustomViewHolder>() {
             @Override
             public CustomViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-                View view = LayoutInflater.from(viewGroup.getContext()).inflate(android.R.layout.simple_list_item_1
+                View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.list_item
                         , viewGroup, false);
                 return new CustomViewHolder(view);
             }
@@ -85,9 +87,13 @@ public class MainActivity extends Activity {
         };
         mRecyclerView.setAdapter(mAdapter);
 
+        // Init & set the touch listener
         SwipeDismissRecyclerViewTouchListener touchListener =
                 new SwipeDismissRecyclerViewTouchListener(
                         mRecyclerView,
+                        /**
+                         * Dismiss callback : Handles deletion of item
+                         */
                         new SwipeDismissRecyclerViewTouchListener.DismissCallbacks() {
                             @Override
                             public boolean canDismiss(int position) {
@@ -95,15 +101,13 @@ public class MainActivity extends Activity {
                             }
 
                             @Override
-                            public void onDismiss(RecyclerView recyclerView, int[] reverseSortedPositions) {
-                                for (int position : reverseSortedPositions) {
-                                    mItems.remove(position);
-                                }
-                                // do not call notifyItemRemoved for every item, it will cause gaps on deleting items
-                                mAdapter.notifyDataSetChanged();
+                            public void onDismiss(RecyclerView recyclerView, int position) {
+                                mItems.remove(position);
+                                mAdapter.notifyItemRemoved(position);
                             }
                         });
         mRecyclerView.setOnTouchListener(touchListener);
+
         // Setting this scroll listener is required to ensure that during ListView scrolling,
         // we don't look for swipes.
         mRecyclerView.setOnScrollListener(touchListener.makeScrollListener());
@@ -116,6 +120,10 @@ public class MainActivity extends Activity {
                 }));
     }
 
+    /**
+     * Regular ViewHolder
+     * Nothing to see here
+     */
     private class CustomViewHolder extends RecyclerView.ViewHolder {
 
         private TextView mTextView;
@@ -123,7 +131,7 @@ public class MainActivity extends Activity {
         public CustomViewHolder(View itemView) {
             super(itemView);
 
-            mTextView = (TextView) itemView.findViewById(android.R.id.text1);
+            mTextView = (TextView) itemView.findViewById(R.id.text_view);
         }
     }
 
