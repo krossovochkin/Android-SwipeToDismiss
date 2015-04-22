@@ -64,10 +64,6 @@ import android.widget.ListView;
  * <p>This class Requires API level 12 or later due to use of {@link
  * ViewPropertyAnimator}.</p>
  *
- * <p>For a generalized {@link View.OnTouchListener} that makes any view dismissable,
- * see {@link SwipeDismissTouchListener}.</p>
- *
- * @see SwipeDismissTouchListener
  */
 public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListener {
     // Cached ViewConfiguration and system-wide constant values
@@ -92,7 +88,7 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
     private int mDownPosition;
     private View mDownView;
     private boolean mPaused;
-    private boolean mAnimationRunning;
+    private boolean mDismissAnimationRunning;
 
     /**
      * The callback interface used by {@link SwipeDismissRecyclerViewTouchListener} to inform its client
@@ -177,7 +173,7 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
 
         switch (motionEvent.getActionMasked()) {
             case MotionEvent.ACTION_DOWN: {
-                if (mPaused || mAnimationRunning) {
+                if (mPaused || mDismissAnimationRunning || isRemoveAnimationRunning()) {
                     return false;
                 }
 
@@ -267,7 +263,7 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
                     final View downView = mDownView; // mDownView gets null'd before animation ends
                     final int downPosition = mDownPosition;
                     // Deactivate listener during animation (only one swipe to dismiss at a time)
-                    mAnimationRunning = true;
+                    mDismissAnimationRunning = true;
                     mDownView.animate()
                             .translationX(dismissRight ? mViewWidth : -mViewWidth)
                             .alpha(0)
@@ -276,7 +272,14 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
                                 @Override
                                 public void onAnimationEnd(Animator animation) {
                                     performDismiss(downView, downPosition);
-                                    mAnimationRunning = false;
+                                    // Delay reset mDismissAnimationRunning to prevent swipe
+                                    // between dismiss & remove animations
+                                    mHandler.postDelayed(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            mDismissAnimationRunning = false;
+                                        }
+                                    }, mRecyclerViewRemoveAnimationDuration);
                                 }
                             });
                 } else {
@@ -300,7 +303,10 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
             }
 
             case MotionEvent.ACTION_MOVE: {
-                if (mVelocityTracker == null || mPaused || mAnimationRunning) {
+                if (mVelocityTracker == null
+                        || mPaused
+                        || mDismissAnimationRunning
+                        || isRemoveAnimationRunning()) {
                     break;
                 }
 
@@ -325,8 +331,8 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
                     // Animate the view to follow finger and fade out
                     mDownView.setTranslationX(deltaX - mSwipingSlop);
                     mDownView.setAlpha(Math.max(
-                            0f,
-                            Math.min(1f,1f - 1f * Math.abs(deltaX) / mViewWidth)
+                                    0f,
+                                    Math.min(1f,1f - 1f * Math.abs(deltaX) / mViewWidth)
                             )
                     );
                     return true;
@@ -335,6 +341,19 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
             }
         }
         return false;
+    }
+
+    /**
+     * Check if the built in remove animation of the recyclerview is running
+     * @return true if the animation is running
+     */
+    private boolean isRemoveAnimationRunning() {
+        RecyclerView.ItemAnimator itemAnimator = mRecyclerView.getItemAnimator();
+        if (itemAnimator != null) {
+            return itemAnimator.isRunning();
+        } else {
+            return false;
+        }
     }
 
     private void performDismiss(final View dismissView, final int dismissPosition) {
