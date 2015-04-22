@@ -125,10 +125,8 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
         mSlop = vc.getScaledTouchSlop();
         mMinFlingVelocity = vc.getScaledMinimumFlingVelocity() * 16;
         mMaxFlingVelocity = vc.getScaledMaximumFlingVelocity();
-//        mAnimationTime = recyclerView.getContext().getResources().getInteger(
-//                android.R.integer.config_shortAnimTime);
-        // TODO remove test
-        mAnimationTime = 5000;
+        mAnimationTime = recyclerView.getContext().getResources().getInteger(
+                android.R.integer.config_shortAnimTime);
         mRecyclerView = recyclerView;
         mCallbacks = callbacks;
         mHandler = new Handler();
@@ -186,7 +184,6 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
                 // TODO: ensure this is a finger, and set a flag
 
                 // Find the child view that was touched (perform a hit test)
-                // cf : http://stackoverflow.com/questions/13296162/what-is-the-definition-of-the-value-supplied-by-the-android-function-view-gethit
                 Rect rect = new Rect();
                 int[] listViewCoords = new int[2];
                 mRecyclerView.getLocationOnScreen(listViewCoords);
@@ -220,13 +217,6 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
                 return false;
             }
 
-            // When is ACTION_CANCEL called ?
-            // -----------------------------
-            // The current gesture has been aborted. You will not receive any more points in it.
-            // You should treat this as an up event, but not perform any action that you normally
-            // would.
-            //
-            // cf : http://stackoverflow.com/questions/11960861/what-causes-a-motionevent-action-cancel-in-android
             case MotionEvent.ACTION_CANCEL: {
                 if (mVelocityTracker == null) {
                     break;
@@ -348,16 +338,11 @@ public class SwipeDismissRecyclerViewTouchListener implements View.OnTouchListen
     }
 
     private void performDismiss(final View dismissView, final int dismissPosition) {
-        // Animate the dismissed list item to zero-height and fire the dismiss callback when
-        // all dismissed list item animations have completed. This triggers layout on each animation
-        // frame; in the future we may want to do something smarter and more performant.
-
         // Trigger callback
         mCallbacks.onDismiss(mRecyclerView, dismissPosition);
 
         // Reset mDownPosition to avoid MotionEvent.ACTION_UP trying to start a dismiss
         // animation with a stale position
-        // (mDownPosition is reset on "ACTION_DOWN")
         mDownPosition = ListView.INVALID_POSITION;
 
         // Send a cancel event
