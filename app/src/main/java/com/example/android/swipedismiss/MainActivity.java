@@ -67,15 +67,17 @@ public class MainActivity extends Activity {
 
         mAdapter = new RecyclerView.Adapter<CustomViewHolder>() {
             @Override
-            public CustomViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
+            public CustomViewHolder onCreateViewHolder(ViewGroup viewGroup, final int i) {
                 View view = LayoutInflater.from(viewGroup.getContext()).inflate(android.R.layout.simple_list_item_1
                         , viewGroup, false);
+                view.setBackgroundResource(android.R.drawable.list_selector_background);
                 return new CustomViewHolder(view);
             }
 
             @Override
             public void onBindViewHolder(CustomViewHolder viewHolder, int i) {
                 viewHolder.mTextView.setText(mItems.get(i));
+                viewHolder.mTextView.setPressed(false);
             }
 
             @Override
@@ -107,7 +109,7 @@ public class MainActivity extends Activity {
         // Setting this scroll listener is required to ensure that during ListView scrolling,
         // we don't look for swipes.
         mRecyclerView.setOnScrollListener(touchListener.makeScrollListener());
-        mRecyclerView.addOnItemTouchListener(new RecyclerItemClickListener(this,
+        mRecyclerView.addOnItemTouchListener(new RecyclerItemClickListener(mRecyclerView,
                 new OnItemClickListener() {
                     @Override
                     public void onItemClick(View view, int position) {
@@ -134,13 +136,49 @@ public class MainActivity extends Activity {
     public class RecyclerItemClickListener implements RecyclerView.OnItemTouchListener {
         private OnItemClickListener mListener;
 
-        GestureDetector mGestureDetector;
+        private static final long DELAY_MILLIS = 100;
 
-        public RecyclerItemClickListener(Context context, OnItemClickListener listener) {
+        private RecyclerView mRecyclerView;
+        private GestureDetector mGestureDetector;
+        private boolean mIsPrepressed = false;
+        private boolean mIsShowPress = false;
+        private View mPressedView = null;
+
+        public RecyclerItemClickListener(RecyclerView recyclerView, OnItemClickListener listener) {
             mListener = listener;
-            mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+            mRecyclerView = recyclerView;
+            mGestureDetector = new GestureDetector(recyclerView.getContext(), new GestureDetector.SimpleOnGestureListener() {
+                @Override
+                public boolean onDown(MotionEvent e) {
+                    mIsPrepressed = true;
+                    mPressedView = mRecyclerView.findChildViewUnder(e.getX(), e.getY());
+                    super.onDown(e);
+                    return false;
+                }
+
+                @Override
+                public void onShowPress(MotionEvent e) {
+                    if (mIsPrepressed && mPressedView != null) {
+                        mPressedView.setPressed(true);
+                        mIsShowPress = true;
+                    }
+                    super.onShowPress(e);
+                }
+
                 @Override
                 public boolean onSingleTapUp(MotionEvent e) {
+                    if (mIsPrepressed && mPressedView != null) {
+                        mPressedView.setPressed(true);
+                        final View pressedView = mPressedView;
+                        pressedView.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                pressedView.setPressed(false);
+                            }
+                        }, DELAY_MILLIS);
+                        mIsPrepressed = false;
+                        mPressedView = null;
+                    }
                     return true;
                 }
             });
@@ -151,6 +189,11 @@ public class MainActivity extends Activity {
             View childView = view.findChildViewUnder(e.getX(), e.getY());
             if (childView != null && mListener != null && mGestureDetector.onTouchEvent(e)) {
                 mListener.onItemClick(childView, view.getChildPosition(childView));
+            } else if (e.getActionMasked() == MotionEvent.ACTION_UP && mPressedView != null && mIsShowPress) {
+                mPressedView.setPressed(false);
+                mIsShowPress = false;
+                mIsPrepressed = false;
+                mPressedView = null;
             }
             return false;
         }
