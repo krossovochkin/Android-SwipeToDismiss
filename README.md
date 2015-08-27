@@ -3,6 +3,7 @@ DEPRECATED!
 
 Swipe to dismiss feature is added to Android support library.
 So, it would be better to use that implementation.
+You can find example [here](http://stackoverflow.com/a/30601554/1533933)
 
 How to
 ------------------------------------
